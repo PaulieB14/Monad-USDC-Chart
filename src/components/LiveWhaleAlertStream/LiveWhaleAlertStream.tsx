@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client';
 import styled, { keyframes, css } from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge } from '../../styles';
 import { WHALE_ALERTS_QUERY } from '../../graphql/queries/whaleAlerts';
-import { formatUSDCDisplay, formatAddress, WHALE_THRESHOLDS, POLLING_INTERVALS, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
+import { formatUSDCDisplay, formatAddress, WHALE_THRESHOLDS, MONAD_EXPLORER, BLOCKCHAIN_INFO, REFRESH_SETTINGS } from '../../config';
 
 // Animations
 const slideIn = keyframes`
@@ -40,6 +40,40 @@ const AlertContainer = styled.div`
     background: #836ef9;
     border-radius: 2px;
   }
+`;
+
+const RefreshControls = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const RefreshButton = styled.button`
+  background: rgba(131, 110, 249, 0.1);
+  border: 1px solid rgba(131, 110, 249, 0.3);
+  color: #836ef9;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(131, 110, 249, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const LastUpdated = styled.div`
+  font-size: 10px;
+  color: #8b93a6;
 `;
 
 const AlertItem = styled.div<{ $severity: 'HIGH' | 'MEDIUM' | 'LOW' }>`
@@ -226,14 +260,16 @@ const getIconEmoji = (severity: 'HIGH' | 'MEDIUM' | 'LOW'): string => {
 // Main Component
 const LiveWhaleAlertStream: React.FC = () => {
   const [alertCount, setAlertCount] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Query for whale transfers (>$50K)
+  // Query for whale transfers - NO auto-polling
   const { data, loading, error, refetch } = useQuery(WHALE_ALERTS_QUERY, {
     variables: {
       minAmount: (WHALE_THRESHOLDS.SMALL * Math.pow(10, 6)).toString()
     },
-    pollInterval: POLLING_INTERVALS.WHALE_TRANSFERS,
+    // No pollInterval - manual refresh only
     errorPolicy: 'ignore',
+    onCompleted: () => setLastUpdated(new Date()),
   });
 
   // Update alert count when data changes
@@ -303,23 +339,37 @@ const LiveWhaleAlertStream: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle>
-          Live Whale Alerts
+          🚨 Whale Alerts
           <StatusIndicator $connected={!loading && !error}>
-            {!loading && !error ? 'Live' : 'Connecting...'}
+            {!loading && !error ? 'Data Loaded' : 'Loading...'}
           </StatusIndicator>
         </CardTitle>
         <Badge $variant={transfers.length > 0 ? 'warning' : 'success'}>
-          {alertCount} Active
+          {alertCount} Found
         </Badge>
       </CardHeader>
       <CardContent>
+        <RefreshControls>
+          <RefreshButton onClick={handleRefresh} disabled={loading}>
+            🔄 {loading ? 'Refreshing...' : 'Refresh Alerts'}
+          </RefreshButton>
+          {lastUpdated && (
+            <LastUpdated>
+              Updated: {lastUpdated.toLocaleTimeString()}
+            </LastUpdated>
+          )}
+        </RefreshControls>
+        
         <AlertContainer>
           {transfers.length === 0 ? (
             <EmptyState>
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>🐋</div>
-              <div style={{ marginBottom: '8px' }}>No recent whale activity</div>
+              <div style={{ marginBottom: '8px' }}>No whale transfers found</div>
               <div style={{ fontSize: '12px' }}>
-                Monitoring for transfers ${WHALE_THRESHOLDS.SMALL.toLocaleString()}+ on {BLOCKCHAIN_INFO.NAME}
+                Searching for transfers ${WHALE_THRESHOLDS.SMALL.toLocaleString()}+ on {BLOCKCHAIN_INFO.NAME}
+              </div>
+              <div style={{ fontSize: '10px', marginTop: '8px', color: '#8b93a6' }}>
+                Click refresh to check for new activity
               </div>
             </EmptyState>
           ) : (
