@@ -14,12 +14,28 @@ export const GRAPH_GATEWAY_URL = GRAPH_API_KEY
 // Fallback to public endpoint if no API key
 export const SUBGRAPH_URL = `https://api.thegraph.com/subgraphs/id/${SUBGRAPH_IPFS_HASH}`;
 
-// Monad blockchain explorer URLs
+// Monad blockchain explorer URLs - Updated to use official MonadExplorer
 export const MONAD_EXPLORER = {
-  BASE_URL: 'https://monad-testnet.socialscan.io',
+  BASE_URL: 'https://testnet.monadexplorer.com',
   TRANSACTION: (hash: string) => `${MONAD_EXPLORER.BASE_URL}/tx/${hash}`,
   ADDRESS: (address: string) => `${MONAD_EXPLORER.BASE_URL}/address/${address}`,
   TOKEN: (address: string) => `${MONAD_EXPLORER.BASE_URL}/token/${address}`,
+};
+
+// Alternative explorers for fallback
+export const ALTERNATIVE_EXPLORERS = {
+  MONADSCAN: {
+    BASE_URL: 'https://testnet.monadscan.com',
+    TRANSACTION: (hash: string) => `https://testnet.monadscan.com/tx/${hash}`,
+    ADDRESS: (address: string) => `https://testnet.monadscan.com/address/${address}`,
+    TOKEN: (address: string) => `https://testnet.monadscan.com/token/${address}`,
+  },
+  SOCIALSCAN: {
+    BASE_URL: 'https://monad-testnet.socialscan.io',
+    TRANSACTION: (hash: string) => `https://monad-testnet.socialscan.io/tx/${hash}`,
+    ADDRESS: (address: string) => `https://monad-testnet.socialscan.io/address/${address}`,
+    TOKEN: (address: string) => `https://monad-testnet.socialscan.io/token/${address}`,
+  }
 };
 
 // Threshold values for whale alerts (in USDC)
@@ -95,6 +111,6 @@ export const REFRESH_SETTINGS = {
 export const BLOCKCHAIN_INFO = {
   NAME: 'Monad Testnet',
   SYMBOL: 'MON',
-  EXPLORER_NAME: 'Monad Explorer',
+  EXPLORER_NAME: 'MonadExplorer',
   EXPLORER_URL: MONAD_EXPLORER.BASE_URL,
 };
