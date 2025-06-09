@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client';
 import styled, { keyframes, css } from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge } from '../../styles';
 import { WHALE_ALERTS_QUERY } from '../../graphql/queries/whaleAlerts';
-import { formatUSDCDisplay, formatAddress, WHALE_THRESHOLDS, POLLING_INTERVALS } from '../../config';
+import { formatUSDCDisplay, formatAddress, WHALE_THRESHOLDS, POLLING_INTERVALS, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
 
 // Animations
 const slideIn = keyframes`
@@ -168,6 +168,18 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+const ExplorerBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #8b93a6;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+`;
+
 // Types
 interface Transfer {
   id: string;
@@ -307,7 +319,7 @@ const LiveWhaleAlertStream: React.FC = () => {
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>🐋</div>
               <div style={{ marginBottom: '8px' }}>No recent whale activity</div>
               <div style={{ fontSize: '12px' }}>
-                Monitoring for transfers ${WHALE_THRESHOLDS.SMALL.toLocaleString()}+
+                Monitoring for transfers ${WHALE_THRESHOLDS.SMALL.toLocaleString()}+ on {BLOCKCHAIN_INFO.NAME}
               </div>
             </EmptyState>
           ) : (
@@ -317,8 +329,8 @@ const LiveWhaleAlertStream: React.FC = () => {
                 <AlertItem
                   key={transfer.id}
                   $severity={severity}
-                  onClick={() => window.open(`https://etherscan.io/tx/${transfer.transaction}`, '_blank')}
-                  title="Click to view on Etherscan"
+                  onClick={() => window.open(MONAD_EXPLORER.TRANSACTION(transfer.transaction), '_blank')}
+                  title={`Click to view on ${BLOCKCHAIN_INFO.EXPLORER_NAME}`}
                 >
                   <AlertIcon $severity={severity}>
                     {getIconEmoji(severity)}
@@ -331,6 +343,9 @@ const LiveWhaleAlertStream: React.FC = () => {
                       {formatAddress(transfer.from.address)} → {formatAddress(transfer.to.address)}
                       <br />
                       {getTimeAgo(transfer.timestamp)}
+                      <ExplorerBadge>
+                        📋 View on {BLOCKCHAIN_INFO.EXPLORER_NAME}
+                      </ExplorerBadge>
                     </AlertDetails>
                   </AlertContent>
                 </AlertItem>
