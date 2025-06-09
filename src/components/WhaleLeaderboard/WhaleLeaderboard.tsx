@@ -3,7 +3,8 @@ import { useQuery } from '@apollo/client';
 import styled from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Text } from '../../styles';
 import { WHALE_LEADERBOARD_QUERY, WHALE_DISTRIBUTION_QUERY } from '../../graphql/queries/whaleLeaderboard';
-import { formatUSDCDisplay, formatAddress, formatLargeNumber, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
+import { formatAddress, formatLargeNumber, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
+import { formatBalance } from '../../utils'; // Use new smart balance formatter
 
 // Styled Components
 const LeaderboardContainer = styled.div`
@@ -237,10 +238,24 @@ const getWhaleEmoji = (rank: number): string => {
 };
 
 const getWhaleCategory = (balance: string): string => {
-  const balanceNum = parseFloat(balance) / Math.pow(10, 6);
-  if (balanceNum >= 10000000) return 'Mega Whale';
-  if (balanceNum >= 1000000) return 'Large Whale';
-  if (balanceNum >= 100000) return 'Medium Whale';
+  // Use the same smart logic as formatBalance to determine category
+  const balanceNum = parseFloat(balance);
+  const as6Decimals = balanceNum / Math.pow(10, 6);
+  const as18Decimals = balanceNum / Math.pow(10, 18);
+  
+  // Choose the more reasonable interpretation
+  let value: number;
+  if (as18Decimals < 1000000000000 && as18Decimals > 0.01) {
+    value = as18Decimals;
+  } else if (as6Decimals < 1000000000000 && as6Decimals > 0.01) {
+    value = as6Decimals;
+  } else {
+    value = balanceNum;
+  }
+  
+  if (value >= 10000000) return 'Mega Whale';
+  if (value >= 1000000) return 'Large Whale';
+  if (value >= 100000) return 'Medium Whale';
   return 'Small Holder';
 };
 
@@ -320,9 +335,22 @@ const WhaleLeaderboard: React.FC = () => {
 
   const accounts = data?.accounts || [];
   
-  // Filter accounts based on selected filter
+  // Filter accounts based on selected filter using smart balance logic
   const filteredAccounts = accounts.filter((account: Account) => {
-    const balance = parseFloat(account.balance) / Math.pow(10, 6);
+    const balanceNum = parseFloat(account.balance);
+    const as6Decimals = balanceNum / Math.pow(10, 6);
+    const as18Decimals = balanceNum / Math.pow(10, 18);
+    
+    // Choose the more reasonable interpretation
+    let balance: number;
+    if (as18Decimals < 1000000000000 && as18Decimals > 0.01) {
+      balance = as18Decimals;
+    } else if (as6Decimals < 1000000000000 && as6Decimals > 0.01) {
+      balance = as6Decimals;
+    } else {
+      balance = balanceNum;
+    }
+    
     switch (filter) {
       case 'MEGA': return balance >= 10000000;
       case 'LARGE': return balance >= 1000000 && balance < 10000000;
@@ -432,7 +460,7 @@ const WhaleLeaderboard: React.FC = () => {
                       {formatAddress(account.address)}
                     </WhaleAddress>
                     <WhaleBalance>
-                      {formatUSDCDisplay(account.balance)}
+                      {formatBalance(account.balance)}
                     </WhaleBalance>
                     <WhaleDetails>
                       {getWhaleCategory(account.balance)} • {recentActivity} recent transfers
