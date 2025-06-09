@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Flex, Button, Text, Badge } from '../../styles';
-import { toggleSound, isSoundEnabled } from '../../utils';
 
 // Styled components for the header
 const HeaderContainer = styled.header`
@@ -109,21 +108,31 @@ const StatValue = styled.span`
   color: var(--color-primary);
 `;
 
+// Simple sound management (no external dependencies)
+const soundManager = {
+  enabled: true,
+  toggle: () => {
+    soundManager.enabled = !soundManager.enabled;
+    return soundManager.enabled;
+  },
+  isEnabled: () => soundManager.enabled
+};
+
 // Header component
 const Header: React.FC = () => {
-  const [soundOn, setSoundOn] = React.useState(isSoundEnabled());
+  const [soundOn, setSoundOn] = React.useState(soundManager.isEnabled());
   const [connected, setConnected] = React.useState(true);
   
   // Toggle sound effects
   const handleToggleSound = () => {
-    const newState = toggleSound();
+    const newState = soundManager.toggle();
     setSoundOn(newState);
   };
   
   // Mock data for stats
   const stats = {
     whaleCount: 156,
-    totalTransactions: 1243,
+    totalTransactions: 1243,  
     largestTransfer: '$5.2M',
     lastUpdated: '2 min ago'
   };
