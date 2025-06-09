@@ -3,6 +3,11 @@
 import { format, fromUnixTime } from 'date-fns';
 import { USDC_DECIMALS, SUBGRAPH_BALANCE_DECIMALS } from '../config';
 
+// The subgraph appears to be storing values with incorrect decimals
+// Based on MonadExplorer showing 0.04339 USDC for value "4339843776115987"
+// This suggests the subgraph uses 18 decimals for transfers too (not 6)
+const SUBGRAPH_TRANSFER_DECIMALS = 18; // Subgraph stores transfer values with 18 decimals
+
 // Format balance from subgraph (which uses 18 decimals for balances)
 export const formatBalance = (balance: string): string => {
   if (!balance) return '$0';
@@ -42,11 +47,18 @@ export const getBalanceValue = (balance: string): number => {
   return balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS);
 };
 
-// Format USDC transfer amount (which correctly uses 6 decimals)
+// Format USDC transfer amount (subgraph stores these with 18 decimals too, not 6!)
 export const formatUSDCAmount = (amount: string): string => {
   if (!amount) return '$0';
   
-  const value = parseFloat(amount) / Math.pow(10, USDC_DECIMALS);
+  // Based on analysis: MonadExplorer shows 0.04339 for "4339843776115987"
+  // This means the subgraph stores transfer values with 18 decimals, not 6
+  const value = parseFloat(amount) / Math.pow(10, SUBGRAPH_TRANSFER_DECIMALS);
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Transfer Debug: ${amount} -> $${value.toFixed(6)}`);
+  }
   
   // Format based on size
   if (value >= 1000000) {
@@ -62,12 +74,12 @@ export const formatUSDCAmount = (amount: string): string => {
 export const formatExactUSDCAmount = (amount: string): string => {
   if (!amount) return '$0.00';
   
-  const value = parseFloat(amount) / Math.pow(10, USDC_DECIMALS);
+  const value = parseFloat(amount) / Math.pow(10, SUBGRAPH_TRANSFER_DECIMALS);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 6 // Show more decimals for small amounts
   }).format(value);
 };
 
@@ -101,11 +113,11 @@ export const formatRelativeTime = (timestamp: string): string => {
   }
 };
 
-// Get color based on USDC transfer amount (6 decimals)
+// Get color based on USDC transfer amount (using 18 decimals)
 export const getAmountColor = (amount: string): string => {
   if (!amount) return '#cccccc';
   
-  const value = parseFloat(amount) / Math.pow(10, USDC_DECIMALS);
+  const value = parseFloat(amount) / Math.pow(10, SUBGRAPH_TRANSFER_DECIMALS);
   
   if (value >= 1000000) {
     return '#FF4136'; // Red for $1M+
