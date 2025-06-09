@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client';
 import styled from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Text } from '../../styles';
 import { WHALE_LEADERBOARD_QUERY, WHALE_DISTRIBUTION_QUERY } from '../../graphql/queries/whaleLeaderboard';
-import { formatUSDCDisplay, formatAddress, POLLING_INTERVALS, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
+import { formatUSDCDisplay, formatAddress, formatLargeNumber, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
 
 // Styled Components
 const LeaderboardContainer = styled.div`
@@ -22,6 +22,40 @@ const LeaderboardContainer = styled.div`
     background: #836ef9;
     border-radius: 2px;
   }
+`;
+
+const RefreshControls = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+`;
+
+const RefreshButton = styled.button`
+  background: rgba(131, 110, 249, 0.1);
+  border: 1px solid rgba(131, 110, 249, 0.3);
+  color: #836ef9;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(131, 110, 249, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const LastUpdated = styled.div`
+  font-size: 10px;
+  color: #8b93a6;
 `;
 
 const WhaleItem = styled.div<{ $rank: number }>`
@@ -213,19 +247,27 @@ const getWhaleCategory = (balance: string): string => {
 // Main Component
 const WhaleLeaderboard: React.FC = () => {
   const [filter, setFilter] = useState<'ALL' | 'MEGA' | 'LARGE' | 'MEDIUM'>('ALL');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Query for top holders
+  // Query for top holders - NO auto-polling
   const { data, loading, error, refetch } = useQuery(WHALE_LEADERBOARD_QUERY, {
     variables: { first: 50 },
-    pollInterval: POLLING_INTERVALS.TOP_HOLDERS,
+    // No pollInterval - manual refresh only
+    errorPolicy: 'ignore',
+    onCompleted: () => setLastUpdated(new Date()),
+  });
+
+  // Query for whale distribution stats - NO auto-polling
+  const { data: statsData, refetch: refetchStats } = useQuery(WHALE_DISTRIBUTION_QUERY, {
+    // No pollInterval - manual refresh only
     errorPolicy: 'ignore',
   });
 
-  // Query for whale distribution stats
-  const { data: statsData } = useQuery(WHALE_DISTRIBUTION_QUERY, {
-    pollInterval: POLLING_INTERVALS.TOP_HOLDERS,
-    errorPolicy: 'ignore',
-  });
+  // Manual refresh function
+  const handleRefresh = () => {
+    refetch();
+    refetchStats();
+  };
 
   if (loading && !data) {
     return (
@@ -257,7 +299,7 @@ const WhaleLeaderboard: React.FC = () => {
             <div style={{ marginBottom: '12px' }}>⚠️</div>
             <div style={{ marginBottom: '8px' }}>Failed to load leaderboard</div>
             <button 
-              onClick={() => refetch()}
+              onClick={handleRefresh}
               style={{
                 background: '#836ef9',
                 border: 'none',
@@ -289,7 +331,7 @@ const WhaleLeaderboard: React.FC = () => {
     }
   });
 
-  // Calculate stats
+  // Calculate stats with better number formatting
   const stats = {
     megaWhales: statsData?.megaWhales?.length || 0,
     largeWhales: statsData?.largeWhales?.length || 0,
@@ -301,22 +343,33 @@ const WhaleLeaderboard: React.FC = () => {
       <CardHeader>
         <CardTitle>🏆 Whale Leaderboard</CardTitle>
         <Badge $variant="success">
-          {filteredAccounts.length} Whales
+          {formatLargeNumber(filteredAccounts.length)} Whales
         </Badge>
       </CardHeader>
       <CardContent>
+        <RefreshControls>
+          <RefreshButton onClick={handleRefresh} disabled={loading}>
+            🔄 {loading ? 'Refreshing...' : 'Refresh Rankings'}
+          </RefreshButton>
+          {lastUpdated && (
+            <LastUpdated>
+              Updated: {lastUpdated.toLocaleTimeString()}
+            </LastUpdated>
+          )}
+        </RefreshControls>
+
         {/* Stats Overview */}
         <StatsContainer>
           <StatItem>
-            <StatValue>{stats.megaWhales}</StatValue>
+            <StatValue>{formatLargeNumber(stats.megaWhales)}</StatValue>
             <StatLabel>Mega Whales<br />($10M+)</StatLabel>
           </StatItem>
           <StatItem>
-            <StatValue>{stats.largeWhales}</StatValue>
+            <StatValue>{formatLargeNumber(stats.largeWhales)}</StatValue>
             <StatLabel>Large Whales<br />($1M-$10M)</StatLabel>
           </StatItem>
           <StatItem>
-            <StatValue>{stats.mediumWhales}</StatValue>
+            <StatValue>{formatLargeNumber(stats.mediumWhales)}</StatValue>
             <StatLabel>Medium Whales<br />($100K-$1M)</StatLabel>
           </StatItem>
         </StatsContainer>
@@ -354,9 +407,9 @@ const WhaleLeaderboard: React.FC = () => {
           {filteredAccounts.length === 0 ? (
             <EmptyState>
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>🐋</div>
-              <div style={{ marginBottom: '8px' }}>No whales found</div>
+              <div style={{ marginBottom: '8px' }}>No whales found in this category</div>
               <div style={{ fontSize: '12px' }}>
-                Try adjusting the filter or check back later
+                Try a different filter or click refresh to check for new data
               </div>
             </EmptyState>
           ) : (
