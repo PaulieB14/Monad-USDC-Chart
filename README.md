@@ -1,76 +1,121 @@
-# USDC Whale Commander
+# 🐋 USDC Whale Commander
 
-A real-time whale activity intelligence dashboard for tracking large USDC movements with military-grade precision. Think "Bloomberg Terminal meets Whale Watching" with gorgeous real-time visualizations.
+A real-time intelligence dashboard for tracking large USDC transfers and whale activity on the Ethereum blockchain.
 
-## 🎯 The Concept
+## ✨ Features
 
-A mission control center for tracking large USDC movements with military-grade precision. This dashboard makes USDC whale watching addictive and insightful.
+- **🚨 Live Whale Alerts**: Real-time monitoring of large USDC transfers ($50K+)
+- **🏆 Whale Leaderboard**: Top USDC holders with filtering and activity tracking
+- **📊 Interactive Charts**: Visual analytics for whale distribution and activity
+- **🔄 Real-time Updates**: Auto-refreshing data every 15-60 seconds
+- **📱 Responsive Design**: Works on desktop and mobile devices
+- **🎨 Military-themed UI**: Dark theme with neon accents
 
-## ✨ Key Features
+## 🚀 Quick Start
 
-### 1. Live Whale Alert Stream
-- Real-time feed of transfers >$50K with pulsing animations
-- Each alert shows: Amount, From/To (with labels like "Unknown Whale", "DEX", "Exchange")
-- Sound effects for mega-whales (>$1M transfers)
-- Color-coded by size: Yellow ($50K+), Orange ($250K+), Red ($1M+)
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/PaulieB14/Monad-USDC-Chart.git
+   cd Monad-USDC-Chart
+   ```
 
-### 2. Whale Leaderboard
-- Top 20 USDC holders with live balance updates
-- "Net Flow" indicator (gaining/losing USDC today)
-- Whale activity score (how often they transfer)
-- Clickable to see their recent activity
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
+3. **Set up environment variables** (optional)
+   ```bash
+   cp .env.example .env
+   # Add your Graph API key for better rate limits
+   REACT_APP_GRAPH_API_KEY=your_api_key_here
+   ```
 
-## 🚀 Getting Started
+4. **Start the development server**
+   ```bash
+   npm start
+   ```
 
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+5. **Open your browser**
+   Navigate to `http://localhost:3000`
 
-### Installation
+## 🔧 Configuration
 
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/usdc-whale-commander.git
-cd usdc-whale-commander
-```
+The dashboard connects to The Graph Protocol subgraph for USDC data. Key configuration options in `src/config.ts`:
 
-2. Install dependencies
-```bash
-npm install
-# or
-yarn install
-```
+- **Subgraph URL**: Currently using IPFS hash `QmNbfA9NhEpDnYohsVDUJjgbHNNEAj9xYFYCnd4JrrhqV3`
+- **Whale Thresholds**: 
+  - Small: $50K (Yellow alerts)
+  - Medium: $250K (Orange alerts)  
+  - Large: $1M+ (Red alerts with animations)
+- **Polling Intervals**: 15-60 seconds depending on data type
 
-3. Set up your environment variables
-   - Copy the `.env.example` file to a new file named `.env`
-   - Replace `YOUR_API_KEY_HERE` with your actual API key from The Graph
-   - The `.env` file is gitignored to keep your API key private
-   - We've also created a `.env.development` file with additional configuration to help with development
+## 📈 Data Sources
 
-4. Note about development environment
-   - This project uses CRACO (Create React App Configuration Override) to customize the webpack configuration
-   - This allows us to bypass the strict module scope plugin that causes issues with imports from outside the src directory
+- **Primary**: The Graph Protocol subgraph for USDC transfers and balances
+- **Blockchain**: Ethereum mainnet USDC contract data
+- **Real-time**: WebSocket connections for live updates (planned)
 
-4. Start the development server
-```bash
-npm start
-# or
-yarn start
-```
+## 🛠️ Tech Stack
 
-5. Open your browser and navigate to `http://localhost:3000`
+- **Frontend**: React 18 + TypeScript
+- **Styling**: Styled Components
+- **Data**: Apollo GraphQL Client
+- **Charts**: Custom SVG charts with animations
+- **Build**: Create React App + Vite
+- **Deployment**: Vercel
 
-## 🔧 Built With
-- React
-- TypeScript
-- Apollo Client for GraphQL
-- Styled Components
-- Howler.js for sound effects
+## 📊 Recent Updates
 
-## 📝 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Latest Improvements (June 2025)
+- ✅ Fixed subgraph URL to use correct IPFS hash
+- ✅ Updated GraphQL queries to match actual schema
+- ✅ Added real-time data integration
+- ✅ Improved error handling and loading states
+- ✅ Added whale filtering and categorization
+- ✅ Enhanced responsive design
+- ✅ Added clickable links to Etherscan
+
+### Planned Features
+- 🔄 WebSocket integration for instant updates
+- 🔊 Sound notifications for large transfers
+- 📱 Mobile app companion
+- 🤖 Telegram/Discord bot alerts
+- 📈 Historical charts and analytics
+- 💾 Export functionality for data
+
+## 🐋 Understanding Whale Categories
+
+- **🏰 Mega Whales**: $10M+ USDC holders
+- **🐋 Large Whales**: $1M - $10M USDC holders  
+- **🐳 Medium Whales**: $100K - $1M USDC holders
+- **🐟 Small Holders**: Under $100K USDC
+
+## 🔗 Useful Links
+
+- **Live Dashboard**: https://monad-usdc-chart.vercel.app/
+- **Subgraph Explorer**: https://thegraph.com/hosted-service/subgraph/your-subgraph
+- **USDC Contract**: https://etherscan.io/token/0xa0b86a33e6427a6c4e5c14f5e6e4b8b8b8b8b8b8
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
-- The Graph Protocol for providing the subgraph data
-- USDC for being the most interesting stablecoin to track
+
+- The Graph Protocol for blockchain data indexing
+- Monad Labs for blockchain infrastructure
+- React and TypeScript communities
+- All the whale watchers keeping the DeFi ecosystem transparent
+
+---
+
+**⚠️ Disclaimer**: This dashboard is for informational purposes only. Always do your own research before making financial decisions.
