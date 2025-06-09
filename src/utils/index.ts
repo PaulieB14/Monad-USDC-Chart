@@ -1,27 +1,23 @@
-// Utility exports
-export * from './addressUtils';
-export * from './formatters';
+// Re-export all utilities from their respective modules
 
-// Simple sound effect functions (no external dependencies)
-export const initSoundEffects = () => {
-  // Placeholder for sound effects initialization
-  // Currently disabled to prevent browser compatibility issues
-  console.log('Sound effects placeholder loaded');
-};
+export {
+  formatUSDCAmount,
+  formatExactUSDCAmount,
+  formatTimestamp,
+  formatRelativeTime,
+  getAmountColor,
+  formatPercentChange,
+  formatLargeNumber,
+  formatActivityScore,
+  formatBalance, // New smart balance formatter
+} from './formatters';
 
-// Sound management
-let soundEnabled = true;
+export {
+  shortenAddress,
+  getAddressLabel,
+} from './addressUtils';
 
-export const toggleSound = (): boolean => {
-  soundEnabled = !soundEnabled;
-  console.log(`Sound ${soundEnabled ? 'enabled' : 'disabled'}`);
-  return soundEnabled;
-};
-
-export const isSoundEnabled = (): boolean => {
-  return soundEnabled;
-};
-
-export const setSoundEnabled = (enabled: boolean): void => {
-  soundEnabled = enabled;
-};
+export {
+  playWhaleSound,
+  playMegaWhaleSound,
+} from './soundEffects';
