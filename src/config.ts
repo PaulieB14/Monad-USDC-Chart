@@ -14,11 +14,11 @@ export const GRAPH_GATEWAY_URL = GRAPH_API_KEY
 // Fallback to public endpoint if no API key
 export const SUBGRAPH_URL = `https://api.thegraph.com/subgraphs/id/${SUBGRAPH_IPFS_HASH}`;
 
-// Monad blockchain explorer URLs - Updated URL format for MonadExplorer
+// Monad blockchain explorer URLs - Fixed URL format for MonadExplorer
 export const MONAD_EXPLORER = {
   BASE_URL: 'https://testnet.monadexplorer.com',
   TRANSACTION: (hash: string) => `${MONAD_EXPLORER.BASE_URL}/tx/${hash}`,
-  ADDRESS: (address: string) => `${MONAD_EXPLORER.BASE_URL}/account/${address}`, // Changed to /account/
+  ADDRESS: (address: string) => `${MONAD_EXPLORER.BASE_URL}/address/${address}`, // Fixed: use /address/ not /account/
   TOKEN: (address: string) => `${MONAD_EXPLORER.BASE_URL}/token/${address}`,
 };
 
@@ -46,8 +46,9 @@ export const WHALE_THRESHOLDS = {
   MEGA: 10000000, // $10M - Critical alert
 };
 
-// USDC has 6 decimal places
+// USDC has 6 decimal places, but subgraph appears to store balances with 18 decimals
 export const USDC_DECIMALS = 6;
+export const SUBGRAPH_BALANCE_DECIMALS = 18; // The subgraph is actually using 18 decimals for balances
 
 // Convert from USDC token amount (with 6 decimals) to human-readable format
 export const formatUSDC = (amount: string): number => {
