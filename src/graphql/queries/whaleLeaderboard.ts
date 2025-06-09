@@ -1,53 +1,29 @@
 import { gql } from '@apollo/client';
 
-// Top USDC Holders
+// Top USDC Holders (Whale Leaderboard)
 export const WHALE_LEADERBOARD_QUERY = gql`
-  query WhaleLeaderboard($minBalance: String = "100000000000") {
+  query WhaleLeaderboard($first: Int = 20) {
     accounts(
-      first: 20
-      where: { balance_gt: $minBalance }
+      first: $first
       orderBy: balance
       orderDirection: desc
+      where: { balance_gt: "0" }
     ) {
       id
       address
       balance
-      transfersFrom(first: 1, orderBy: timestamp, orderDirection: desc) {
-        timestamp
-      }
-      transfersTo(first: 1, orderBy: timestamp, orderDirection: desc) {
-        timestamp
-      }
-    }
-  }
-`;
-
-// Whale Activity Score (Recent Activity)
-export const WHALE_ACTIVITY_QUERY = gql`
-  query WhaleActivity($whaleAddress: String!, $since: String!) {
-    account(id: $whaleAddress) {
-      address
-      balance
-      transfersFrom(
-        where: { timestamp_gt: $since }
-        orderBy: timestamp
-        orderDirection: desc
-      ) {
+      transfersFrom(first: 5, orderBy: timestamp, orderDirection: desc) {
         id
-        value
         timestamp
+        value
         to {
           address
         }
       }
-      transfersTo(
-        where: { timestamp_gt: $since }
-        orderBy: timestamp
-        orderDirection: desc
-      ) {
+      transfersTo(first: 5, orderBy: timestamp, orderDirection: desc) {
         id
-        value
         timestamp
+        value
         from {
           address
         }
@@ -56,76 +32,166 @@ export const WHALE_ACTIVITY_QUERY = gql`
   }
 `;
 
-// Whale Accumulation vs Distribution
-export const WHALE_FLOW_ANALYSIS_QUERY = gql`
-  query WhaleFlowAnalysis($whaleAddress: String!, $since: String!) {
-    inflowTransfers: transfers(
+// Top Whale Activity (accounts with recent large transfers)
+export const WHALE_ACTIVITY_QUERY = gql`
+  query WhaleActivity($since: BigInt!, $minBalance: BigInt = "1000000000000") {
+    accounts(
       first: 50
-      where: { 
-        to: $whaleAddress
-        timestamp_gt: $since
-      }
-      orderBy: timestamp
+      orderBy: balance
       orderDirection: desc
+      where: { balance_gte: $minBalance }
     ) {
-      value
-      timestamp
-      from {
-        address
+      id
+      address
+      balance
+      transfersFrom(
+        first: 10
+        orderBy: timestamp
+        orderDirection: desc
+        where: { timestamp_gte: $since }
+      ) {
+        id
+        timestamp
+        value
+        to {
+          address
+        }
       }
-    }
-    
-    outflowTransfers: transfers(
-      first: 50
-      where: { 
-        from: $whaleAddress
-        timestamp_gt: $since
-      }
-      orderBy: timestamp
-      orderDirection: desc
-    ) {
-      value
-      timestamp
-      to {
-        address
+      transfersTo(
+        first: 10
+        orderBy: timestamp
+        orderDirection: desc
+        where: { timestamp_gte: $since }
+      ) {
+        id
+        timestamp
+        value
+        from {
+          address
+        }
       }
     }
   }
 `;
 
-// Top Counterparties for Whale
-export const WHALE_COUNTERPARTIES_QUERY = gql`
-  query WhaleCounterparties($whaleAddress: String!, $minAmount: String = "1000000000") {
-    transfersOut: transfers(
-      first: 20
-      where: { 
-        from: $whaleAddress
-        value_gt: $minAmount
+// Whale Balance Changes Over Time
+export const WHALE_BALANCE_CHANGES_QUERY = gql`
+  query WhaleBalanceChanges($addresses: [String!]!, $since: BigInt!) {
+    transfers(
+      where: {
+        or: [
+          { from_in: $addresses, timestamp_gte: $since }
+          { to_in: $addresses, timestamp_gte: $since }
+        ]
       }
-      orderBy: value
+      orderBy: timestamp
       orderDirection: desc
+      first: 100
     ) {
+      id
+      timestamp
       value
+      from {
+        id
+        address
+        balance
+      }
       to {
+        id
         address
         balance
       }
     }
-    
-    transfersIn: transfers(
+  }
+`;
+
+// Most Active Whales (by transfer count)
+export const MOST_ACTIVE_WHALES_QUERY = gql`
+  query MostActiveWhales($since: BigInt!, $minBalance: BigInt = "1000000000000") {
+    accounts(
       first: 20
-      where: { 
-        to: $whaleAddress
-        value_gt: $minAmount
-      }
-      orderBy: value
+      orderBy: balance
       orderDirection: desc
+      where: { balance_gte: $minBalance }
     ) {
-      value
-      from {
-        address
-        balance
+      id
+      address
+      balance
+      transfersFrom(where: { timestamp_gte: $since }) {
+        id
+        value
       }
+      transfersTo(where: { timestamp_gte: $since }) {
+        id
+        value
+      }
+    }
+  }
+`;
+
+// New Whale Detection (accounts that recently crossed whale threshold)
+export const NEW_WHALES_QUERY = gql`
+  query NewWhales($since: BigInt!, $whaleThreshold: BigInt = "1000000000000") {
+    accounts(
+      first: 20
+      orderBy: balance
+      orderDirection: desc
+      where: { balance_gte: $whaleThreshold }
+    ) {
+      id
+      address
+      balance
+      transfersTo(
+        first: 1
+        orderBy: timestamp
+        orderDirection: desc
+        where: { 
+          timestamp_gte: $since
+          value_gte: "100000000000"
+        }
+      ) {
+        id
+        timestamp
+        value
+        from {
+          address
+        }
+      }
+    }
+  }
+`;
+
+// Whale Distribution Statistics
+export const WHALE_DISTRIBUTION_QUERY = gql`
+  query WhaleDistribution {
+    # Mega whales (>$10M)
+    megaWhales: accounts(
+      where: { balance_gte: "10000000000000" }
+    ) {
+      id
+      balance
+    }
+    
+    # Large whales ($1M-$10M)
+    largeWhales: accounts(
+      where: { 
+        balance_gte: "1000000000000"
+        balance_lt: "10000000000000"
+      }
+    ) {
+      id
+      balance
+    }
+    
+    # Medium whales ($100K-$1M)
+    mediumWhales: accounts(
+      where: { 
+        balance_gte: "100000000000"
+        balance_lt: "1000000000000"
+      }
+    ) {
+      id
+      balance
     }
   }
 `;
