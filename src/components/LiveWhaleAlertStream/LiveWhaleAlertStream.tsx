@@ -3,7 +3,8 @@ import { useQuery } from '@apollo/client';
 import styled, { keyframes, css } from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge } from '../../styles';
 import { WHALE_ALERTS_QUERY } from '../../graphql/queries/whaleAlerts';
-import { formatUSDCDisplay, formatAddress, WHALE_THRESHOLDS, MONAD_EXPLORER, BLOCKCHAIN_INFO, REFRESH_SETTINGS } from '../../config';
+import { formatAddress, WHALE_THRESHOLDS, MONAD_EXPLORER, BLOCKCHAIN_INFO, REFRESH_SETTINGS } from '../../config';
+import { formatUSDCAmount } from '../../utils/formatters'; // Use the corrected 18-decimal formatter
 
 // Animations
 const slideIn = keyframes`
@@ -230,9 +231,10 @@ interface Transfer {
   };
 }
 
-// Helper functions
+// Helper functions - FIXED to use 18 decimals
 const getSeverity = (value: string): 'HIGH' | 'MEDIUM' | 'LOW' => {
-  const numValue = parseFloat(value) / Math.pow(10, 6);
+  // FIXED: Use 18 decimals instead of 6, since subgraph stores all values with 18 decimals
+  const numValue = parseFloat(value) / Math.pow(10, 18);
   if (numValue >= WHALE_THRESHOLDS.LARGE) return 'HIGH';
   if (numValue >= WHALE_THRESHOLDS.MEDIUM) return 'MEDIUM';
   return 'LOW';
@@ -263,9 +265,11 @@ const LiveWhaleAlertStream: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Query for whale transfers - NO auto-polling
+  // FIXED: Update minAmount calculation to use 18 decimals for query
   const { data, loading, error, refetch } = useQuery(WHALE_ALERTS_QUERY, {
     variables: {
-      minAmount: (WHALE_THRESHOLDS.SMALL * Math.pow(10, 6)).toString()
+      // Convert threshold to 18-decimal format for subgraph query
+      minAmount: (WHALE_THRESHOLDS.SMALL * Math.pow(10, 18)).toString()
     },
     // No pollInterval - manual refresh only
     errorPolicy: 'ignore',
@@ -387,7 +391,7 @@ const LiveWhaleAlertStream: React.FC = () => {
                   </AlertIcon>
                   <AlertContent>
                     <AlertAmount $severity={severity}>
-                      {formatUSDCDisplay(transfer.value)}
+                      {formatUSDCAmount(transfer.value)}
                     </AlertAmount>
                     <AlertDetails>
                       {formatAddress(transfer.from.address)} → {formatAddress(transfer.to.address)}
