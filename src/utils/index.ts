@@ -9,7 +9,8 @@ export {
   formatPercentChange,
   formatLargeNumber,
   formatActivityScore,
-  formatBalance, // New smart balance formatter
+  formatBalance, // Smart balance formatter using 18 decimals
+  getBalanceValue, // Get numeric balance value for calculations
 } from './formatters';
 
 export {
