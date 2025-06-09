@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Text } from '../../styles';
 import { WHALE_LEADERBOARD_QUERY, WHALE_DISTRIBUTION_QUERY } from '../../graphql/queries/whaleLeaderboard';
 import { formatAddress, formatLargeNumber, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
-import { formatBalance } from '../../utils'; // Use new smart balance formatter
+import { formatBalance, getBalanceValue } from '../../utils'; // Use correct balance functions
 
 // Styled Components
 const LeaderboardContainer = styled.div`
@@ -238,20 +238,7 @@ const getWhaleEmoji = (rank: number): string => {
 };
 
 const getWhaleCategory = (balance: string): string => {
-  // Use the same smart logic as formatBalance to determine category
-  const balanceNum = parseFloat(balance);
-  const as6Decimals = balanceNum / Math.pow(10, 6);
-  const as18Decimals = balanceNum / Math.pow(10, 18);
-  
-  // Choose the more reasonable interpretation
-  let value: number;
-  if (as18Decimals < 1000000000000 && as18Decimals > 0.01) {
-    value = as18Decimals;
-  } else if (as6Decimals < 1000000000000 && as6Decimals > 0.01) {
-    value = as6Decimals;
-  } else {
-    value = balanceNum;
-  }
+  const value = getBalanceValue(balance); // Use consistent balance calculation
   
   if (value >= 10000000) return 'Mega Whale';
   if (value >= 1000000) return 'Large Whale';
@@ -335,21 +322,9 @@ const WhaleLeaderboard: React.FC = () => {
 
   const accounts = data?.accounts || [];
   
-  // Filter accounts based on selected filter using smart balance logic
+  // Filter accounts using correct balance calculation
   const filteredAccounts = accounts.filter((account: Account) => {
-    const balanceNum = parseFloat(account.balance);
-    const as6Decimals = balanceNum / Math.pow(10, 6);
-    const as18Decimals = balanceNum / Math.pow(10, 18);
-    
-    // Choose the more reasonable interpretation
-    let balance: number;
-    if (as18Decimals < 1000000000000 && as18Decimals > 0.01) {
-      balance = as18Decimals;
-    } else if (as6Decimals < 1000000000000 && as6Decimals > 0.01) {
-      balance = as6Decimals;
-    } else {
-      balance = balanceNum;
-    }
+    const balance = getBalanceValue(account.balance); // Use consistent balance calculation
     
     switch (filter) {
       case 'MEGA': return balance >= 10000000;
