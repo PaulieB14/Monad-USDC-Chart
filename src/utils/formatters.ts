@@ -3,6 +3,60 @@
 import { format, fromUnixTime } from 'date-fns';
 import { USDC_DECIMALS } from '../config';
 
+// Debug function to analyze balance values
+const analyzeBalance = (balance: string): { original: string; asUSDC6: number; asUSDC18: number } => {
+  const original = balance;
+  const asUSDC6 = parseFloat(balance) / Math.pow(10, 6);
+  const asUSDC18 = parseFloat(balance) / Math.pow(10, 18);
+  return { original, asUSDC6, asUSDC18 };
+};
+
+// Smart balance formatter that handles incorrect decimal places
+export const formatBalance = (balance: string): string => {
+  if (!balance) return '$0';
+  
+  const balanceNum = parseFloat(balance);
+  
+  // Debug: Log the analysis in development
+  if (process.env.NODE_ENV === 'development') {
+    const analysis = analyzeBalance(balance);
+    console.log('Balance Analysis:', analysis);
+  }
+  
+  // If balance is negative, show as $0
+  if (balanceNum < 0) {
+    return '$0';
+  }
+  
+  // Try different decimal interpretations to find the most reasonable one
+  const as6Decimals = balanceNum / Math.pow(10, 6);
+  const as18Decimals = balanceNum / Math.pow(10, 18);
+  
+  // Use heuristic: if 18-decimal interpretation gives reasonable values (< $1T), use it
+  // Otherwise fall back to 6-decimal interpretation
+  let value: number;
+  
+  if (as18Decimals < 1000000000000 && as18Decimals > 0.01) { // Less than $1T and more than $0.01
+    value = as18Decimals;
+  } else if (as6Decimals < 1000000000000 && as6Decimals > 0.01) {
+    value = as6Decimals;
+  } else {
+    // If both seem unreasonable, try raw value
+    value = balanceNum;
+  }
+  
+  // Format based on size
+  if (value >= 1000000000) {
+    return `$${(value / 1000000000).toFixed(2)}B`;
+  } else if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(2)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(2)}K`;
+  } else {
+    return `$${value.toFixed(2)}`;
+  }
+};
+
 // Format USDC amount with 6 decimal places to human-readable format
 export const formatUSDCAmount = (amount: string): string => {
   if (!amount) return '$0';
