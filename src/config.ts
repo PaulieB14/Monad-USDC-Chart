@@ -14,6 +14,14 @@ export const GRAPH_GATEWAY_URL = GRAPH_API_KEY
 // Fallback to public endpoint if no API key
 export const SUBGRAPH_URL = `https://api.thegraph.com/subgraphs/id/${SUBGRAPH_IPFS_HASH}`;
 
+// Monad blockchain explorer URLs
+export const MONAD_EXPLORER = {
+  BASE_URL: 'https://monad-testnet.socialscan.io',
+  TRANSACTION: (hash: string) => `${MONAD_EXPLORER.BASE_URL}/tx/${hash}`,
+  ADDRESS: (address: string) => `${MONAD_EXPLORER.BASE_URL}/address/${address}`,
+  TOKEN: (address: string) => `${MONAD_EXPLORER.BASE_URL}/token/${address}`,
+};
+
 // Threshold values for whale alerts (in USDC)
 export const WHALE_THRESHOLDS = {
   SMALL: 50000, // $50K - Yellow
@@ -66,4 +74,12 @@ export const POLLING_INTERVALS = {
   WHALE_TRANSFERS: 15000,  // 15 seconds for large transfers
   GENERAL_DATA: 30000,     // 30 seconds for general data
   TOP_HOLDERS: 60000,      // 1 minute for holder rankings
+};
+
+// Blockchain info
+export const BLOCKCHAIN_INFO = {
+  NAME: 'Monad Testnet',
+  SYMBOL: 'MON',
+  EXPLORER_NAME: 'Monad Explorer',
+  EXPLORER_URL: MONAD_EXPLORER.BASE_URL,
 };
