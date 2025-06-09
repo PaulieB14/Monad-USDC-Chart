@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import styled, { keyframes } from 'styled-components';
-import { Card, CardHeader, CardTitle, CardContent, Badge, Text } from '../../styles';
-import { WHALE_ALERTS_QUERY, LATEST_TRANSFERS_QUERY } from '../../graphql/queries/whaleAlerts';
+import styled, { keyframes, css } from 'styled-components';
+import { Card, CardHeader, CardTitle, CardContent, Badge } from '../../styles';
+import { WHALE_ALERTS_QUERY } from '../../graphql/queries/whaleAlerts';
 import { formatUSDCDisplay, formatAddress, WHALE_THRESHOLDS, POLLING_INTERVALS } from '../../config';
 
 // Animations
@@ -37,7 +37,7 @@ const AlertContainer = styled.div`
   }
   
   &::-webkit-scrollbar-thumb {
-    background: var(--color-primary);
+    background: #836ef9;
     border-radius: 2px;
   }
 `;
@@ -45,34 +45,33 @@ const AlertContainer = styled.div`
 const AlertItem = styled.div<{ $severity: 'HIGH' | 'MEDIUM' | 'LOW' }>`
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
-  margin-bottom: var(--spacing-xs);
+  gap: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
   border-left: 4px solid ${props => 
-    props.$severity === 'HIGH' ? 'var(--color-danger)' :
-    props.$severity === 'MEDIUM' ? 'var(--color-warning)' :
-    'var(--color-success)'
+    props.$severity === 'HIGH' ? '#ff4136' :
+    props.$severity === 'MEDIUM' ? '#ffdc00' :
+    '#2ecc40'
   };
   background: ${props => 
     props.$severity === 'HIGH' ? 'rgba(255, 65, 54, 0.1)' :
-    props.$severity === 'MEDIUM' ? 'rgba(255, 193, 7, 0.1)' :
-    'rgba(40, 167, 69, 0.1)'
+    props.$severity === 'MEDIUM' ? 'rgba(255, 220, 0, 0.1)' :
+    'rgba(46, 204, 64, 0.1)'
   };
   
   animation: ${slideIn} 0.5s ease-out;
+  transition: all 0.2s ease;
   
   &:hover {
     background: ${props => 
       props.$severity === 'HIGH' ? 'rgba(255, 65, 54, 0.15)' :
-      props.$severity === 'MEDIUM' ? 'rgba(255, 193, 7, 0.15)' :
-      'rgba(40, 167, 69, 0.15)'
+      props.$severity === 'MEDIUM' ? 'rgba(255, 220, 0, 0.15)' :
+      'rgba(46, 204, 64, 0.15)'
     };
     transform: translateX(2px);
     cursor: pointer;
   }
-  
-  transition: all 0.2s ease;
 `;
 
 const AlertIcon = styled.div<{ $severity: 'HIGH' | 'MEDIUM' | 'LOW' }>`
@@ -82,19 +81,18 @@ const AlertIcon = styled.div<{ $severity: 'HIGH' | 'MEDIUM' | 'LOW' }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-sm);
+  font-size: 14px;
   font-weight: bold;
   flex-shrink: 0;
-  
-  background: ${props => 
-    props.$severity === 'HIGH' ? 'var(--color-danger)' :
-    props.$severity === 'MEDIUM' ? 'var(--color-warning)' :
-    'var(--color-success)'
-  };
-  
   color: white;
   
-  ${props => props.$severity === 'HIGH' && `
+  background: ${props => 
+    props.$severity === 'HIGH' ? '#ff4136' :
+    props.$severity === 'MEDIUM' ? '#ffdc00' :
+    '#2ecc40'
+  };
+  
+  ${props => props.$severity === 'HIGH' && css`
     animation: ${pulse} 2s infinite;
   `}
 `;
@@ -106,34 +104,36 @@ const AlertContent = styled.div`
 
 const AlertAmount = styled.div<{ $severity: 'HIGH' | 'MEDIUM' | 'LOW' }>`
   font-weight: bold;
-  font-size: var(--font-size-md);
+  font-size: 16px;
   color: ${props => 
-    props.$severity === 'HIGH' ? 'var(--color-danger)' :
-    props.$severity === 'MEDIUM' ? 'var(--color-warning)' :
-    'var(--color-success)'
+    props.$severity === 'HIGH' ? '#ff4136' :
+    props.$severity === 'MEDIUM' ? '#ffdc00' :
+    '#2ecc40'
   };
 `;
 
 const AlertDetails = styled.div`
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  font-size: 12px;
+  color: #8b93a6;
   margin-top: 2px;
 `;
 
 const StatusIndicator = styled.div<{ $connected: boolean }>`
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-xs);
-  color: ${props => props.$connected ? 'var(--color-success)' : 'var(--color-warning)'};
+  gap: 8px;
+  font-size: 12px;
+  color: ${props => props.$connected ? '#2ecc40' : '#ffdc00'};
   
   &::before {
     content: '';
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background-color: ${props => props.$connected ? 'var(--color-success)' : 'var(--color-warning)'};
-    animation: ${props => props.$connected ? pulse : 'none'} 2s infinite;
+    background-color: ${props => props.$connected ? '#2ecc40' : '#ffdc00'};
+    ${props => props.$connected && css`
+      animation: ${pulse} 2s infinite;
+    `}
   }
 `;
 
@@ -143,7 +143,7 @@ const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: var(--color-text-secondary);
+  color: #8b93a6;
   text-align: center;
 `;
 
@@ -158,7 +158,7 @@ const LoadingSpinner = styled.div`
     width: 30px;
     height: 30px;
     border: 3px solid rgba(131, 110, 249, 0.3);
-    border-top: 3px solid var(--color-primary);
+    border-top: 3px solid #836ef9;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -260,21 +260,21 @@ const LiveWhaleAlertStream: React.FC = () => {
         <CardContent>
           <div style={{ 
             textAlign: 'center', 
-            padding: 'var(--spacing-lg)', 
-            color: 'var(--color-danger)'
+            padding: '20px', 
+            color: '#ff4136'
           }}>
-            <div style={{ marginBottom: 'var(--spacing-sm)' }}>⚠️</div>
-            <div style={{ marginBottom: 'var(--spacing-xs)' }}>Failed to connect to subgraph</div>
+            <div style={{ marginBottom: '12px' }}>⚠️</div>
+            <div style={{ marginBottom: '8px' }}>Failed to connect to subgraph</div>
             <button 
               onClick={handleRefresh}
               style={{
-                background: 'var(--color-primary)',
+                background: '#836ef9',
                 border: 'none',
                 color: 'white',
-                padding: 'var(--spacing-xs) var(--spacing-sm)',
-                borderRadius: 'var(--border-radius-sm)',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: 'var(--font-size-xs)'
+                fontSize: '12px'
               }}
             >
               Retry Connection
@@ -304,9 +304,9 @@ const LiveWhaleAlertStream: React.FC = () => {
         <AlertContainer>
           {transfers.length === 0 ? (
             <EmptyState>
-              <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-sm)' }}>🐋</div>
-              <div style={{ marginBottom: 'var(--spacing-xs)' }}>No recent whale activity</div>
-              <div style={{ fontSize: 'var(--font-size-xs)' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🐋</div>
+              <div style={{ marginBottom: '8px' }}>No recent whale activity</div>
+              <div style={{ fontSize: '12px' }}>
                 Monitoring for transfers ${WHALE_THRESHOLDS.SMALL.toLocaleString()}+
               </div>
             </EmptyState>
