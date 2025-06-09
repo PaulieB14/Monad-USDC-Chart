@@ -19,6 +19,9 @@ export {
 } from './addressUtils';
 
 export {
-  playWhaleSound,
-  playMegaWhaleSound,
+  initSoundEffects,
+  playWhaleAlertSound,
+  playClickSound,
+  toggleSound,
+  isSoundEnabled,
 } from './soundEffects';
