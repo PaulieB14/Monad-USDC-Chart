@@ -20,29 +20,6 @@ A mission control center for tracking large USDC movements with military-grade p
 - Whale activity score (how often they transfer)
 - Clickable to see their recent activity
 
-### 3. Ocean Flow Visualization (Coming Soon)
-- Animated Sankey diagram showing money flows between major addresses
-- Thickness = transfer volume, animation speed = frequency
-- Hover to see exact amounts and wallet labels
-- "Follow the Money" mode to trace specific whale movements
-
-### 4. Market Pulse Indicators (Coming Soon)
-- Whale Activity Index: Algorithm scoring current whale activity vs normal
-- USDC Velocity: How fast money is moving through the network
-- Distribution Health: Are whales accumulating or distributing?
-- Alert Level: Green/Yellow/Red based on unusual activity
-
-### 5. Time Machine (Coming Soon)
-- Scrub through the last 24 hours of whale activity
-- Watch major movements replay in fast-forward
-- Spot patterns and correlations
-
-## 🎨 Visual Design
-- Dark theme with ocean-blue accents and whale-themed icons
-- Smooth animations - money flows like water
-- Glowing effects for major transfers
-- Sound design - subtle whale calls for major movements
-- Mobile responsive - track whales anywhere
 
 ## 🚀 Getting Started
 
