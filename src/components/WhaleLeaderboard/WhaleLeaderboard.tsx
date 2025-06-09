@@ -3,7 +3,7 @@ import { useQuery } from '@apollo/client';
 import styled from 'styled-components';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Text } from '../../styles';
 import { WHALE_LEADERBOARD_QUERY, WHALE_DISTRIBUTION_QUERY } from '../../graphql/queries/whaleLeaderboard';
-import { formatUSDCDisplay, formatAddress, POLLING_INTERVALS } from '../../config';
+import { formatUSDCDisplay, formatAddress, POLLING_INTERVALS, MONAD_EXPLORER, BLOCKCHAIN_INFO } from '../../config';
 
 // Styled Components
 const LeaderboardContainer = styled.div`
@@ -19,7 +19,7 @@ const LeaderboardContainer = styled.div`
   }
   
   &::-webkit-scrollbar-thumb {
-    background: var(--color-primary);
+    background: #836ef9;
     border-radius: 2px;
   }
 `;
@@ -27,10 +27,10 @@ const LeaderboardContainer = styled.div`
 const WhaleItem = styled.div<{ $rank: number }>`
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
-  margin-bottom: var(--spacing-xs);
+  gap: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
   background: ${props => 
     props.$rank === 1 ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05))' :
     props.$rank === 2 ? 'linear-gradient(135deg, rgba(192, 192, 192, 0.1), rgba(192, 192, 192, 0.05))' :
@@ -38,7 +38,7 @@ const WhaleItem = styled.div<{ $rank: number }>`
     'rgba(255, 255, 255, 0.02)'
   };
   border: 1px solid ${props => 
-    props.$rank <= 3 ? 'rgba(255, 215, 0, 0.2)' : 'var(--color-border)'
+    props.$rank <= 3 ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)'
   };
   
   &:hover {
@@ -58,14 +58,14 @@ const RankBadge = styled.div<{ $rank: number }>`
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: var(--font-size-sm);
+  font-size: 14px;
   flex-shrink: 0;
   
   background: ${props => 
     props.$rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)' :
     props.$rank === 2 ? 'linear-gradient(135deg, #C0C0C0, #808080)' :
     props.$rank === 3 ? 'linear-gradient(135deg, #CD7F32, #8B4513)' :
-    'var(--color-primary)'
+    '#836ef9'
   };
   color: ${props => props.$rank <= 3 ? 'black' : 'white'};
   
@@ -81,30 +81,39 @@ const WhaleInfo = styled.div`
 
 const WhaleAddress = styled.div`
   font-family: 'Monaco', 'Menlo', monospace;
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
+  font-size: 14px;
+  color: #ffffff;
   margin-bottom: 2px;
 `;
 
 const WhaleBalance = styled.div`
   font-weight: bold;
-  font-size: var(--font-size-md);
-  color: var(--color-primary);
+  font-size: 16px;
+  color: #836ef9;
 `;
 
 const WhaleDetails = styled.div`
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  font-size: 12px;
+  color: #8b93a6;
+`;
+
+const ExplorerHint = styled.div`
+  font-size: 10px;
+  color: #8b93a6;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 `;
 
 const StatsContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-sm);
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: var(--border-radius-sm);
+  border-radius: 6px;
 `;
 
 const StatItem = styled.div`
@@ -112,14 +121,14 @@ const StatItem = styled.div`
 `;
 
 const StatValue = styled.div`
-  font-size: var(--font-size-lg);
+  font-size: 18px;
   font-weight: bold;
-  color: var(--color-primary);
+  color: #836ef9;
 `;
 
 const StatLabel = styled.div`
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
+  font-size: 10px;
+  color: #8b93a6;
   margin-top: 2px;
 `;
 
@@ -134,7 +143,7 @@ const LoadingSpinner = styled.div`
     width: 30px;
     height: 30px;
     border: 3px solid rgba(131, 110, 249, 0.3);
-    border-top: 3px solid var(--color-primary);
+    border-top: 3px solid #836ef9;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -150,29 +159,29 @@ const EmptyState = styled.div`
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: var(--color-text-secondary);
+  color: #8b93a6;
   text-align: center;
 `;
 
 const FilterButtons = styled.div`
   display: flex;
-  gap: var(--spacing-xs);
-  margin-bottom: var(--spacing-sm);
+  gap: 8px;
+  margin-bottom: 12px;
 `;
 
 const FilterButton = styled.button<{ $active: boolean }>`
-  background: ${props => props.$active ? 'var(--color-primary)' : 'transparent'};
-  border: 1px solid ${props => props.$active ? 'var(--color-primary)' : 'var(--color-border)'};
-  color: ${props => props.$active ? 'white' : 'var(--color-text-secondary)'};
+  background: ${props => props.$active ? '#836ef9' : 'transparent'};
+  border: 1px solid ${props => props.$active ? '#836ef9' : 'rgba(255, 255, 255, 0.1)'};
+  color: ${props => props.$active ? 'white' : '#8b93a6'};
   padding: 4px 8px;
-  border-radius: var(--border-radius-sm);
-  font-size: var(--font-size-xs);
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover {
-    background: ${props => props.$active ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.1)'};
-    color: ${props => props.$active ? 'white' : 'var(--color-text)'};
+    background: ${props => props.$active ? '#836ef9' : 'rgba(255, 255, 255, 0.1)'};
+    color: ${props => props.$active ? 'white' : '#ffffff'};
   }
 `;
 
@@ -191,12 +200,6 @@ const getWhaleEmoji = (rank: number): string => {
   if (rank <= 3) return '🐋';
   if (rank <= 10) return '🐳';
   return '🐟';
-};
-
-const calculateActivityScore = (account: Account): number => {
-  const recentTransfers = account.transfersFrom.length + account.transfersTo.length;
-  const balance = parseFloat(account.balance) / Math.pow(10, 6);
-  return Math.log(balance) * (1 + recentTransfers * 0.1);
 };
 
 const getWhaleCategory = (balance: string): string => {
@@ -248,21 +251,21 @@ const WhaleLeaderboard: React.FC = () => {
         <CardContent>
           <div style={{ 
             textAlign: 'center', 
-            padding: 'var(--spacing-lg)', 
-            color: 'var(--color-danger)'
+            padding: '20px', 
+            color: '#ff4136'
           }}>
-            <div style={{ marginBottom: 'var(--spacing-sm)' }}>⚠️</div>
-            <div style={{ marginBottom: 'var(--spacing-xs)' }}>Failed to load leaderboard</div>
+            <div style={{ marginBottom: '12px' }}>⚠️</div>
+            <div style={{ marginBottom: '8px' }}>Failed to load leaderboard</div>
             <button 
               onClick={() => refetch()}
               style={{
-                background: 'var(--color-primary)',
+                background: '#836ef9',
                 border: 'none',
                 color: 'white',
-                padding: 'var(--spacing-xs) var(--spacing-sm)',
-                borderRadius: 'var(--border-radius-sm)',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: 'var(--font-size-xs)'
+                fontSize: '12px'
               }}
             >
               Retry
@@ -296,7 +299,7 @@ const WhaleLeaderboard: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Whale Leaderboard</CardTitle>
+        <CardTitle>🏆 Whale Leaderboard</CardTitle>
         <Badge $variant="success">
           {filteredAccounts.length} Whales
         </Badge>
@@ -350,24 +353,23 @@ const WhaleLeaderboard: React.FC = () => {
         <LeaderboardContainer>
           {filteredAccounts.length === 0 ? (
             <EmptyState>
-              <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-sm)' }}>🐋</div>
-              <div style={{ marginBottom: 'var(--spacing-xs)' }}>No whales found</div>
-              <div style={{ fontSize: 'var(--font-size-xs)' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🐋</div>
+              <div style={{ marginBottom: '8px' }}>No whales found</div>
+              <div style={{ fontSize: '12px' }}>
                 Try adjusting the filter or check back later
               </div>
             </EmptyState>
           ) : (
             filteredAccounts.map((account: Account, index: number) => {
               const rank = index + 1;
-              const balance = parseFloat(account.balance) / Math.pow(10, 6);
               const recentActivity = account.transfersFrom.length + account.transfersTo.length;
               
               return (
                 <WhaleItem
                   key={account.id}
                   $rank={rank}
-                  onClick={() => window.open(`https://etherscan.io/address/${account.address}`, '_blank')}
-                  title="Click to view on Etherscan"
+                  onClick={() => window.open(MONAD_EXPLORER.ADDRESS(account.address), '_blank')}
+                  title={`Click to view on ${BLOCKCHAIN_INFO.EXPLORER_NAME}`}
                 >
                   <RankBadge $rank={rank}>
                     {rank <= 10 ? rank : getWhaleEmoji(rank)}
@@ -382,6 +384,9 @@ const WhaleLeaderboard: React.FC = () => {
                     <WhaleDetails>
                       {getWhaleCategory(account.balance)} • {recentActivity} recent transfers
                     </WhaleDetails>
+                    <ExplorerHint>
+                      📋 View on {BLOCKCHAIN_INFO.EXPLORER_NAME}
+                    </ExplorerHint>
                   </WhaleInfo>
                 </WhaleItem>
               );
