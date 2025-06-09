@@ -1,48 +1,25 @@
 // Utility functions for formatting data
 
 import { format, fromUnixTime } from 'date-fns';
-import { USDC_DECIMALS } from '../config';
+import { USDC_DECIMALS, SUBGRAPH_BALANCE_DECIMALS } from '../config';
 
-// Debug function to analyze balance values
-const analyzeBalance = (balance: string): { original: string; asUSDC6: number; asUSDC18: number } => {
-  const original = balance;
-  const asUSDC6 = parseFloat(balance) / Math.pow(10, 6);
-  const asUSDC18 = parseFloat(balance) / Math.pow(10, 18);
-  return { original, asUSDC6, asUSDC18 };
-};
-
-// Smart balance formatter that handles incorrect decimal places
+// Format balance from subgraph (which uses 18 decimals for balances)
 export const formatBalance = (balance: string): string => {
   if (!balance) return '$0';
   
   const balanceNum = parseFloat(balance);
   
-  // Debug: Log the analysis in development
-  if (process.env.NODE_ENV === 'development') {
-    const analysis = analyzeBalance(balance);
-    console.log('Balance Analysis:', analysis);
-  }
-  
-  // If balance is negative, show as $0
+  // Handle negative balances
   if (balanceNum < 0) {
     return '$0';
   }
   
-  // Try different decimal interpretations to find the most reasonable one
-  const as6Decimals = balanceNum / Math.pow(10, 6);
-  const as18Decimals = balanceNum / Math.pow(10, 18);
+  // The subgraph stores balances with 18 decimals, not 6
+  const value = balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS);
   
-  // Use heuristic: if 18-decimal interpretation gives reasonable values (< $1T), use it
-  // Otherwise fall back to 6-decimal interpretation
-  let value: number;
-  
-  if (as18Decimals < 1000000000000 && as18Decimals > 0.01) { // Less than $1T and more than $0.01
-    value = as18Decimals;
-  } else if (as6Decimals < 1000000000000 && as6Decimals > 0.01) {
-    value = as6Decimals;
-  } else {
-    // If both seem unreasonable, try raw value
-    value = balanceNum;
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`Balance Debug: ${balance} -> $${value.toFixed(2)}`);
   }
   
   // Format based on size
@@ -57,7 +34,15 @@ export const formatBalance = (balance: string): string => {
   }
 };
 
-// Format USDC amount with 6 decimal places to human-readable format
+// Get numeric balance value for calculations (using 18 decimals)
+export const getBalanceValue = (balance: string): number => {
+  if (!balance) return 0;
+  const balanceNum = parseFloat(balance);
+  if (balanceNum < 0) return 0;
+  return balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS);
+};
+
+// Format USDC transfer amount (which correctly uses 6 decimals)
 export const formatUSDCAmount = (amount: string): string => {
   if (!amount) return '$0';
   
@@ -116,7 +101,7 @@ export const formatRelativeTime = (timestamp: string): string => {
   }
 };
 
-// Get color based on USDC amount
+// Get color based on USDC transfer amount (6 decimals)
 export const getAmountColor = (amount: string): string => {
   if (!amount) return '#cccccc';
   
