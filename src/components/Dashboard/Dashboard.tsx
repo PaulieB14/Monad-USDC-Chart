@@ -5,7 +5,7 @@ import { Grid, Text, Card, CardHeader, CardTitle, CardContent, Badge } from '../
 import { LiveWhaleAlertStream } from '../LiveWhaleAlertStream';
 import { WhaleLeaderboard } from '../WhaleLeaderboard';
 import { GET_TOKEN_INFO } from '../../graphql/queries/whaleAlerts';
-import { formatUSDCDisplay, BLOCKCHAIN_INFO } from '../../config';
+import { formatUSDCDisplay, formatLargeNumber, BLOCKCHAIN_INFO, REFRESH_SETTINGS } from '../../config';
 
 // Animations
 const countUp = keyframes`
@@ -61,6 +61,14 @@ const Subtitle = styled.p`
   margin-right: auto;
 `;
 
+const StatusContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+`;
+
 const StatusBadge = styled.div<{ $connected: boolean }>`
   display: inline-flex;
   align-items: center;
@@ -80,6 +88,37 @@ const StatusBadge = styled.div<{ $connected: boolean }>`
     background: ${props => props.$connected ? '#22c55e' : '#ef4444'};
     animation: ${props => props.$connected ? pulse : 'none'} 2s infinite;
   }
+`;
+
+const RefreshButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  background: rgba(131, 110, 249, 0.1);
+  border: 1px solid rgba(131, 110, 249, 0.3);
+  color: #836ef9;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(131, 110, 249, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const RefreshInfo = styled.div`
+  font-size: 12px;
+  color: #8b93a6;
+  text-align: center;
+  margin-top: 8px;
 `;
 
 const StatsGrid = styled.div`
@@ -177,6 +216,13 @@ const NetworkInfo = styled.div`
   margin-top: 8px;
 `;
 
+const StatNote = styled.div`
+  font-size: 10px;
+  color: #8b93a6;
+  font-style: italic;
+  margin-top: 4px;
+`;
+
 const ComponentsGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -237,12 +283,16 @@ const useAnimatedCounter = (end: number, duration: number = 2000) => {
 // Main Dashboard Component
 const Dashboard: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Query for basic token info to check connection
-  const { data: tokenData, loading, error } = useQuery(GET_TOKEN_INFO, {
+  // Query for basic token info - NO auto-polling
+  const { data: tokenData, loading, error, refetch } = useQuery(GET_TOKEN_INFO, {
     errorPolicy: 'ignore',
-    pollInterval: 30000,
-    onCompleted: () => setIsConnected(true),
+    // No pollInterval - manual refresh only
+    onCompleted: () => {
+      setIsConnected(true);
+      setLastUpdated(new Date());
+    },
     onError: () => setIsConnected(false),
   });
 
@@ -253,10 +303,22 @@ const Dashboard: React.FC = () => {
 
   const token = tokenData?.tokens?.[0];
   
-  // Animated counters
-  const animatedSupply = useAnimatedCounter(token ? parseFloat(formatUSDCDisplay(token.totalSupply).replace(/[$,BMK]/g, '')) : 0);
-  const animatedHolders = useAnimatedCounter(token?.holderCount || 0);
-  const animatedTransfers = useAnimatedCounter(token?.transferCount || 0);
+  // Process and validate the numbers
+  const processedData = {
+    supply: token ? parseFloat(formatUSDCDisplay(token.totalSupply).replace(/[$,BMK]/g, '')) : 0,
+    holders: Math.abs(token?.holderCount || 0), // Take absolute value to handle negative
+    transfers: token?.transferCount || 0,
+  };
+
+  // Animated counters with processed data
+  const animatedSupply = useAnimatedCounter(processedData.supply);
+  const animatedHolders = useAnimatedCounter(processedData.holders);
+  const animatedTransfers = useAnimatedCounter(Math.min(processedData.transfers, 999999999)); // Cap at reasonable number
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    refetch();
+  };
 
   // Show loading state while initial data loads
   if (loading && !tokenData) {
@@ -281,9 +343,19 @@ const Dashboard: React.FC = () => {
         <Subtitle>
           Real-time intelligence dashboard for tracking large USDC movements on {BLOCKCHAIN_INFO.NAME}
         </Subtitle>
-        <StatusBadge $connected={isConnected}>
-          {isConnected ? `🟢 Live Data Connected` : '🔴 Connection Issues'}
-        </StatusBadge>
+        <StatusContainer>
+          <StatusBadge $connected={isConnected}>
+            {isConnected ? `🟢 Data Loaded` : '🔴 Connection Issues'}
+          </StatusBadge>
+          <RefreshButton onClick={handleRefresh} disabled={loading}>
+            🔄 {loading ? 'Refreshing...' : 'Refresh Data'}
+          </RefreshButton>
+        </StatusContainer>
+        {REFRESH_SETTINGS.SHOW_LAST_UPDATED && lastUpdated && (
+          <RefreshInfo>
+            Last updated: {lastUpdated.toLocaleTimeString()} • {REFRESH_SETTINGS.AUTO_REFRESH_DISABLED_MESSAGE}
+          </RefreshInfo>
+        )}
       </Header>
 
       {/* Enhanced Stats Overview */}
@@ -307,22 +379,25 @@ const Dashboard: React.FC = () => {
         
         <StatCard>
           <StatContent>
-            <StatValue>{animatedHolders.toLocaleString()}</StatValue>
-            <StatLabel>Total Holders</StatLabel>
+            <StatValue>{formatLargeNumber(animatedHolders)}</StatValue>
+            <StatLabel>Unique Holders</StatLabel>
             <StatChart>
               {[45, 67, 78, 89, 95, 88, 92, 85, 90, 87].map((height, i) => (
                 <ChartBar key={i} $height={height} $delay={i * 0.1} />
               ))}
             </StatChart>
             <NetworkInfo>
-              👥 Holder Growth Trend
+              👥 Addresses with USDC balance
             </NetworkInfo>
+            {processedData.holders !== (token?.holderCount || 0) && (
+              <StatNote>* Showing absolute value</StatNote>
+            )}
           </StatContent>
         </StatCard>
         
         <StatCard>
           <StatContent>
-            <StatValue>{animatedTransfers.toLocaleString()}</StatValue>
+            <StatValue>{formatLargeNumber(animatedTransfers)}</StatValue>
             <StatLabel>Total Transfers</StatLabel>
             <StatChart>
               {[65, 78, 85, 91, 88, 94, 89, 96, 92, 98].map((height, i) => (
@@ -330,23 +405,27 @@ const Dashboard: React.FC = () => {
               ))}
             </StatChart>
             <NetworkInfo>
-              📈 Transaction Activity
+              📈 Historical transaction count
             </NetworkInfo>
+            {processedData.transfers > 999999999 && (
+              <StatNote>* Large numbers approximated</StatNote>
+            )}
           </StatContent>
         </StatCard>
         
         <StatCard>
           <StatContent>
             <StatValue>🐋</StatValue>
-            <StatLabel>Whale Status</StatLabel>
+            <StatLabel>Whale Monitoring</StatLabel>
             <StatChart>
               {[100, 95, 88, 92, 96, 89, 93, 87, 91, 94].map((height, i) => (
                 <ChartBar key={i} $height={height} $delay={i * 0.1} />
               ))}
             </StatChart>
             <NetworkInfo>
-              🎯 Monitoring Active • {BLOCKCHAIN_INFO.NAME}
+              🎯 Active • Manual Refresh Only
             </NetworkInfo>
+            <StatNote>* No auto-refresh to save queries</StatNote>
           </StatContent>
         </StatCard>
       </StatsGrid>
@@ -375,7 +454,7 @@ const Dashboard: React.FC = () => {
           <span>🔗 Explorer: <a href={BLOCKCHAIN_INFO.EXPLORER_URL} target="_blank" rel="noopener noreferrer" style={{ color: '#836ef9' }}>
             {BLOCKCHAIN_INFO.EXPLORER_NAME}
           </a></span>
-          <span>⚡ Updates: Every 15-60 seconds</span>
+          <span>🔄 Manual refresh only</span>
           <span>🎯 Built for DeFi transparency</span>
         </div>
       </div>
