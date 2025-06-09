@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Flex, Text, Badge } from '../../styles';
 import { formatUSDCAmount, formatRelativeTime, getAmountColor, shortenAddress, getAddressLabel } from '../../utils';
+import { MONAD_EXPLORER } from '../../config';
 import type { Transfer } from '../../graphql/types';
 
 // Animations
@@ -161,6 +162,61 @@ const TimeStamp = styled(Text)`
   font-style: italic;
 `;
 
+// New styled components for transaction linking
+const TransactionContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-xs);
+  background-color: rgba(131, 110, 249, 0.1);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(131, 110, 249, 0.2);
+  position: relative;
+`;
+
+const TransactionLink = styled.a`
+  color: var(--color-primary);
+  text-decoration: none;
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  
+  &:hover {
+    color: var(--color-primary-light);
+    text-decoration: underline;
+    text-shadow: 0 0 4px var(--color-primary);
+  }
+  
+  &:active {
+    transform: scale(0.98);
+  }
+`;
+
+const ExplorerIcon = styled.span`
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+`;
+
+const TransactionCopyButton = styled.button`
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 2px;
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+  margin-left: auto;
+  
+  &:hover {
+    opacity: 1;
+  }
+`;
+
 // WhaleAlert component
 interface WhaleAlertProps {
   transfer: Transfer;
@@ -179,8 +235,10 @@ const WhaleAlert: React.FC<WhaleAlertProps> = ({ transfer }) => {
   
   // State for copy tooltip
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [copiedTxHash, setCopiedTxHash] = useState<boolean>(false);
   // Timeout ref for copy tooltip
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const txCopyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Handle copy address
   const handleCopyAddress = (address: string, e: React.MouseEvent) => {
@@ -200,6 +258,30 @@ const WhaleAlert: React.FC<WhaleAlertProps> = ({ transfer }) => {
       setCopiedAddress(null);
     }, 2000);
   };
+
+  // Handle copy transaction hash
+  const handleCopyTxHash = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    navigator.clipboard.writeText(transfer.transaction);
+    
+    // Clear any existing timeout
+    if (txCopyTimeoutRef.current) {
+      clearTimeout(txCopyTimeoutRef.current);
+    }
+    
+    // Show the copied tooltip
+    setCopiedTxHash(true);
+    
+    // Hide the tooltip after 2 seconds
+    txCopyTimeoutRef.current = setTimeout(() => {
+      setCopiedTxHash(false);
+    }, 2000);
+  };
+
+  // Create transaction explorer URL
+  const explorerUrl = MONAD_EXPLORER.TRANSACTION(transfer.transaction);
+  const shortTxHash = `${transfer.transaction.slice(0, 8)}...${transfer.transaction.slice(-6)}`;
   
   return (
     <AlertContainer $color={color}>
@@ -246,6 +328,31 @@ const WhaleAlert: React.FC<WhaleAlertProps> = ({ transfer }) => {
             )}
           </AddressContainer>
           <FullAddressText>{transfer.to.address}</FullAddressText>
+          
+          {/* Transaction Hash Section */}
+          <TransactionContainer>
+            <Text $size="sm" $color="var(--color-text-secondary)">Transaction:</Text>
+            <TransactionLink 
+              href={explorerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`View transaction ${transfer.transaction} on Monad Explorer`}
+            >
+              <span>{shortTxHash}</span>
+              <ExplorerIcon>🔗</ExplorerIcon>
+            </TransactionLink>
+            <TransactionCopyButton 
+              onClick={handleCopyTxHash}
+              title="Copy transaction hash"
+            >
+              📋
+            </TransactionCopyButton>
+            {copiedTxHash && (
+              <CopyTooltip style={{ opacity: 1, position: 'absolute', top: '-30px', right: '0' }}>
+                Transaction hash copied!
+              </CopyTooltip>
+            )}
+          </TransactionContainer>
         </Flex>
       </AlertContent>
     </AlertContainer>
