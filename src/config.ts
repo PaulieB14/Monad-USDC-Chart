@@ -14,11 +14,11 @@ export const GRAPH_GATEWAY_URL = GRAPH_API_KEY
 // Fallback to public endpoint if no API key
 export const SUBGRAPH_URL = `https://api.thegraph.com/subgraphs/id/${SUBGRAPH_IPFS_HASH}`;
 
-// Monad blockchain explorer URLs - Updated to use official MonadExplorer
+// Monad blockchain explorer URLs - Updated URL format for MonadExplorer
 export const MONAD_EXPLORER = {
   BASE_URL: 'https://testnet.monadexplorer.com',
   TRANSACTION: (hash: string) => `${MONAD_EXPLORER.BASE_URL}/tx/${hash}`,
-  ADDRESS: (address: string) => `${MONAD_EXPLORER.BASE_URL}/address/${address}`,
+  ADDRESS: (address: string) => `${MONAD_EXPLORER.BASE_URL}/account/${address}`, // Changed to /account/
   TOKEN: (address: string) => `${MONAD_EXPLORER.BASE_URL}/token/${address}`,
 };
 
