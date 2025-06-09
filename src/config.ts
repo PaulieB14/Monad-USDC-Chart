@@ -47,6 +47,14 @@ export const formatUSDCDisplay = (amount: string): string => {
   return `$${num.toFixed(2)}`;
 };
 
+// Format large numbers for display (without dollar sign)
+export const formatLargeNumber = (num: number): string => {
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(2)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(2)}K`;
+  return num.toLocaleString();
+};
+
 // Convert from human-readable USDC amount to token amount with 6 decimals
 export const toUSDCAmount = (amount: number): string => {
   return (amount * Math.pow(10, USDC_DECIMALS)).toString();
@@ -69,11 +77,18 @@ export const SIX_HOURS_AGO = () => getTimeAgo(6);
 export const ONE_DAY_AGO = () => getTimeAgo(24);
 export const ONE_WEEK_AGO = () => getTimeAgo(24 * 7);
 
-// Polling intervals (in milliseconds)
+// Polling intervals (in milliseconds) - DISABLED by default to save queries
 export const POLLING_INTERVALS = {
-  WHALE_TRANSFERS: 15000,  // 15 seconds for large transfers
-  GENERAL_DATA: 30000,     // 30 seconds for general data
-  TOP_HOLDERS: 60000,      // 1 minute for holder rankings
+  WHALE_TRANSFERS: 0,  // Disabled - manual refresh only
+  GENERAL_DATA: 0,     // Disabled - manual refresh only  
+  TOP_HOLDERS: 0,      // Disabled - manual refresh only
+};
+
+// Manual refresh settings
+export const REFRESH_SETTINGS = {
+  ENABLED: true,
+  SHOW_LAST_UPDATED: true,
+  AUTO_REFRESH_DISABLED_MESSAGE: "Auto-refresh disabled to save API queries. Click refresh to update data."
 };
 
 // Blockchain info
