@@ -9,7 +9,7 @@ export interface Account {
 
 export interface Transfer {
   id: string;
-  transaction?: string;
+  transaction: string; // This should always be present, not optional
   timestamp: string;
   block?: string;
   value: string;
