@@ -3,12 +3,12 @@
 import { format, fromUnixTime } from 'date-fns';
 import { USDC_DECIMALS, SUBGRAPH_BALANCE_DECIMALS } from '../config';
 
-// The subgraph appears to be storing values with incorrect decimals
-// Based on MonadExplorer showing 0.04339 USDC for value "4339843776115987"
-// This suggests the subgraph uses 18 decimals for transfers too (not 6)
-const SUBGRAPH_TRANSFER_DECIMALS = 18; // Subgraph stores transfer values with 18 decimals
+// CORRECTED: MonadExplorer contract verification shows USDC has 6 decimals
+// Both transfers and balances should use 6 decimals, not 18
+const SUBGRAPH_TRANSFER_DECIMALS = 6; // USDC transfers use 6 decimals
+const SUBGRAPH_BALANCE_DECIMALS_ACTUAL = 6; // USDC balances use 6 decimals
 
-// Format balance from subgraph (which uses 18 decimals for balances)
+// Format balance from subgraph (which uses 6 decimals for USDC)
 export const formatBalance = (balance: string): string => {
   if (!balance) return '$0';
   
@@ -19,12 +19,12 @@ export const formatBalance = (balance: string): string => {
     return '$0';
   }
   
-  // The subgraph stores balances with 18 decimals, not 6
-  const value = balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS);
+  // CORRECTED: The subgraph stores USDC balances with 6 decimals
+  const value = balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS_ACTUAL);
   
   // Debug logging in development
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Balance Debug: ${balance} -> $${value.toFixed(2)}`);
+    console.log(`Balance Debug (6 decimals): ${balance} -> $${value.toFixed(2)}`);
   }
   
   // Format based on size
@@ -39,25 +39,24 @@ export const formatBalance = (balance: string): string => {
   }
 };
 
-// Get numeric balance value for calculations (using 18 decimals)
+// Get numeric balance value for calculations (using 6 decimals)
 export const getBalanceValue = (balance: string): number => {
   if (!balance) return 0;
   const balanceNum = parseFloat(balance);
   if (balanceNum < 0) return 0;
-  return balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS);
+  return balanceNum / Math.pow(10, SUBGRAPH_BALANCE_DECIMALS_ACTUAL);
 };
 
-// Format USDC transfer amount (subgraph stores these with 18 decimals too, not 6!)
+// Format USDC transfer amount (subgraph stores these with 6 decimals)
 export const formatUSDCAmount = (amount: string): string => {
   if (!amount) return '$0';
   
-  // Based on analysis: MonadExplorer shows 0.04339 for "4339843776115987"
-  // This means the subgraph stores transfer values with 18 decimals, not 6
+  // CORRECTED: USDC uses 6 decimals as confirmed by MonadExplorer
   const value = parseFloat(amount) / Math.pow(10, SUBGRAPH_TRANSFER_DECIMALS);
   
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log(`Transfer Debug: ${amount} -> $${value.toFixed(6)}`);
+    console.log(`Transfer Debug (6 decimals): ${amount} -> $${value.toFixed(6)}`);
   }
   
   // Format based on size
@@ -113,7 +112,7 @@ export const formatRelativeTime = (timestamp: string): string => {
   }
 };
 
-// Get color based on USDC transfer amount (using 18 decimals)
+// Get color based on USDC transfer amount (using 6 decimals)
 export const getAmountColor = (amount: string): string => {
   if (!amount) return '#cccccc';
   
